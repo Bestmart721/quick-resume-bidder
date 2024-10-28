@@ -155,9 +155,9 @@ const exportJobDescription = async (jobDescription, resume) => {
     throw new Error('OUTPUT_DIR environment variable is not defined');
   }
 
-  const outputFilename = formatString(config.outputFilename, resume.companyName, resume.roleTitle.replace(/\//g, '-'));
+  const outputFilename = formatString(config.outputFilename, resume.roleTitle.replace(/\//g, '-'), resume.companyName);
   fs.writeFileSync(
-    path.resolve(outputDir, outputFilename),
+    path.resolve(outputDir, outputFilename + '.txt'),
     jobDescription
   )
 }
@@ -194,9 +194,10 @@ const exportResume = async (resume) => {
   if (!outputDir) {
     throw new Error('OUTPUT_DIR environment variable is not defined');
   }
+  const outputFilename = formatString(config.outputFilename, revisedJobTitle, resume.companyName);
   const outputPath = path.resolve(
     outputDir,
-    `MatthewSliger-${revisedJobTitle}-${resume.companyName}.docx`
+    outputFilename + '.docx'
   )
 
   try {
