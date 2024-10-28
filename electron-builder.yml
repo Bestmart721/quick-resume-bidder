@@ -13,6 +13,7 @@ asarUnpack:
   - resources/**
 win:
   executableName: quick-resume
+  sign: false
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}

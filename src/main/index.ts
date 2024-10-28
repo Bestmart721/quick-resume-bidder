@@ -1,7 +1,6 @@
-import { app, shell, BrowserWindow, ipcMain, Notification, Tray, Menu } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, Notification, Tray, Menu, nativeImage } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import icon from '../../resources/icon.png?asset'
 import OpenAI from 'openai'
 import { z as zod } from 'zod'
 import fs from 'fs'
@@ -13,8 +12,14 @@ import { exec } from 'child_process'
 import { zodResponseFormat } from 'openai/helpers/zod'
 import Docxtemplater from 'docxtemplater'
 
+import iconImage from '../../resources/icon.png?asset'
 import image from '../../resources/images.png?asset'
+import LightCaution from '../../resources/LightCaution.png?asset'
+import LightError from '../../resources/LightError.png?asset'
+import LightSuccess from '../../resources/LightSuccess.png?asset'
 import config from '../../config.json'
+
+const instructions = fs.readFileSync(path.resolve('instructions.txt'), 'utf8');
 
 const globalKeyboardListener = new GlobalKeyboardListener();
 
@@ -55,12 +60,29 @@ const globalKeyboardListener = new GlobalKeyboardListener();
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
   // Set app user model id for windows
-  electronApp.setAppUserModelId('com.electron')
-  
+  // electronApp.setAppUserModelId('com.electron')
+
+  const gotTheLock = app.requestSingleInstanceLock();
+
+  if (!gotTheLock) {
+    new Notification({
+      title: 'Resume Generator',
+      body: 'Another instance of the app is already running.',
+      icon: LightCaution
+    }).show();
+    app.quit();
+  }
+
+  new Notification({
+    icon: 'D:\\05-Projects\\Mine\\quick-resume\\resources\\LightSuccess.png',
+    title: 'Resume Generator',
+    body: 'Ready to generate resumes.'
+  }).show();
+
   logMessage('++++++ Resume writer is ready. ++++++');
   const tray = new Tray(image);
   const contextMenu = Menu.buildFromTemplate([
-      { label: 'Quit', click: () => app.quit() }
+    { label: 'Quit', click: () => app.quit() }
   ]);
   tray.setToolTip('Resume Generator');
   tray.setContextMenu(contextMenu);
@@ -117,7 +139,7 @@ const generateResume = async (jobDescription) => {
     //model: "gpt-4o-2024-08-06",
     model: "gpt-4o-mini",
     messages: [
-      { role: "system", content: resources.instructionResume },
+      { role: "system", content: instructions },
       { role: "user", content: jobDescription },
     ],
     response_format: zodResponseFormat(generatedResumeExtracted, "research_paper_extraction"),
@@ -132,8 +154,10 @@ const exportJobDescription = async (jobDescription, resume) => {
   if (!outputDir) {
     throw new Error('OUTPUT_DIR environment variable is not defined');
   }
+
+  const outputFilename = formatString(config.outputFilename, resume.companyName, resume.roleTitle.replace(/\//g, '-'));
   fs.writeFileSync(
-    path.resolve(outputDir, `MatthewSliger-${resume.roleTitle.replace(/\//g, '-')}-${resume.companyName}.txt`),
+    path.resolve(outputDir, outputFilename),
     jobDescription
   )
 }
@@ -185,6 +209,10 @@ const exportResume = async (resume) => {
       body: (err instanceof Error ? err.message : 'Unknown error')
     }).show();
   }
+}
+
+function formatString(template, ...args) {
+  return template.replace(/{(\d+)}/g, (match, index) => args[index] || '');
 }
 
 const formatBullets = (bulletsArray) => {

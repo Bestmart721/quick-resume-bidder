@@ -1,0 +1,36 @@
+I’ve been working as the role mentioned in the job description provided below. Here is my profile information:
+
+- Name: Matthew F. Sliger
+IM Digital, Charlotte, NC • Senior Software Engineer	 Aug 2022 – Jul 2024
+Mettics, Chicago, IL • Senior Software Engineer	 Jan 2018 – Jun 2022
+Southshore Managed IT Group, Portage, IN • Full Stack Developer	 Oct 2013 – Sep 2017
+
+
+Now I am looking for a new opportunity. Based on the job description (JD), generate a professional resume that is **highly tailored to this role**. The goal is to **predict and greatly expand** the tech stacks, tools, and frameworks typically required for the role, **doubling the range** of inferred skills and technologies based on common industry knowledge, while focusing on **specific, relevant tools** instead of general terms.
+
+### Key Requirements for Resume Generation
+
+1. **Adaptive Expansion of Tech Stacks**:
+   - If the JD lacks detail, **expand the resume to include at least 35 relevant tech stacks, skills, and tools**, predicting and including commonly associated technologies and **specific tools**, avoiding overly broad categories.
+   - If the JD is more detailed, **focus on the relevant tech stacks mentioned**, and only include related tools that are directly applicable to the role, **without over-expanding**.
+
+2. **Generate Detailed Experiences with Expanded Tech Stacks and Soft Skills**:
+   - For my **current role (IM Digital)**, generate **14-15 experiences** that align with the tech stack (expanded or focused depending on the JD), using detailed examples of responsibilities and accomplishments.
+   - Include **both expanded tech stacks and soft skills** mentioned in the JD (such as collaboration, leadership, communication, adaptability) throughout the experiences to provide a balanced view of technical and interpersonal abilities.
+   - For my **previous roles (Applied Engineering and AVI Systems)**, generate **8 detailed experiences** per company, reflecting both the explicitly mentioned technologies and the inferred tech stack as necessary, ensuring the use of specific tools relevant to the role.
+   - Ensure that all experiences reflect **both soft skills** and **hard skills** required for the role, and that all skills are consistent with the timeline of my career, **avoiding mention of technologies that weren’t available** during the specific roles.
+
+3. **Predict and Enhance Key Abilities**:
+   - Extract **key abilities from the JD**, and expand on them by **predicting relevant abilities** commonly required for the role.
+   - Ensure that both expanded technical skills and soft skills are integrated into the **experience section**. The **skills section** should be reserved for **hard skills** and technologies.
+
+4. **Skills Section**:
+   - In the **technical skills section**, list at least **35 relevant tech stacks, skills, and tools**. Focus on **hard skills** and **specific tools** (e.g., programming languages, frameworks, development environments) rather than soft skills.
+   - Ensure that all specific tools and technologies mentioned in the experiences are also reflected in the **skills section** to maintain consistency between the two sections.
+   - Number of Groups shoul be less than 8 and skill keywords must not be bolded with asterisks.
+5. **Consistent Bold Formatting for Key Skills**:
+   - **Consistently bold all key abilities, technical skills, and tools** throughout the resume by surrounding them with **asterisks** tags eg. **React**. Ensure this bolding is applied uniformly across the **experience**, **skills**, and **summary** sections to highlight key terms for ATS (Applicant Tracking Systems).
+6. **ATS Optimization and Formatting**:
+   - **Bold key abilities and technical skills** to ensure they stand out for ATS (Applicant Tracking Systems). Surround these with **asterisks** to indicate this formatting.
+   - Structure the resume with clear sections: **Summary, Technical Skills, and Experiences**.
+   - Ensure the **summary is concise**, highlighting both the explicitly mentioned and inferred strengths, focusing on relevant skills and avoiding general terms. 11 years of experience in software development, with a focus on web and mobile applications
