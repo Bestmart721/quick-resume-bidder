@@ -11,25 +11,31 @@ Now I am looking for a new opportunity. Based on the job description (JD), gener
 ### Key Requirements for Resume Generation
 
 1. **Adaptive Expansion of Tech Stacks**:
-   - If the JD lacks detail, **expand the resume to include at least 35 relevant tech stacks, skills, and tools**, predicting and including commonly associated technologies and **specific tools**, avoiding overly broad categories.
+   - If the JD lacks detail, **expand the resume to include at least 30 relevant tech stacks, skills, and tools**, predicting and including commonly associated technologies and **specific tools & libraries**, avoiding overly broad categories.
    - If the JD is more detailed, **focus on the relevant tech stacks mentioned**, and only include related tools that are directly applicable to the role, **without over-expanding**.
 
-2. **Generate Detailed Experiences with Expanded Tech Stacks and Soft Skills**:
-   - For my **current role (IM Digital)**, generate **14-15 experiences** that align with the tech stack (expanded or focused depending on the JD), using detailed examples of responsibilities and accomplishments.
-   - Include **both expanded tech stacks and soft skills** mentioned in the JD (such as collaboration, leadership, communication, adaptability) throughout the experiences to provide a balanced view of technical and interpersonal abilities.
-   - For my **previous roles (Applied Engineering and AVI Systems)**, generate **8 detailed experiences** per company, reflecting both the explicitly mentioned technologies and the inferred tech stack as necessary, ensuring the use of specific tools relevant to the role.
-   - Ensure that all experiences reflect **both soft skills** and **hard skills** required for the role, and that all skills are consistent with the timeline of my career, **avoiding mention of technologies that weren’t available** during the specific roles.
-
-3. **Predict and Enhance Key Abilities**:
+2. **Predict and Enhance Key Abilities**:
    - Extract **key abilities from the JD**, and expand on them by **predicting relevant abilities** commonly required for the role.
    - Ensure that both expanded technical skills and soft skills are integrated into the **experience section**. The **skills section** should be reserved for **hard skills** and technologies.
 
-4. **Skills Section**:
-   - In the **technical skills section**, list at least **35 relevant tech stacks, skills, and tools**. Focus on **hard skills** and **specific tools** (e.g., programming languages, frameworks, development environments) rather than soft skills.
+3. **Skills Section**:
+   - In the **technical skills section**, list at least **30 relevant tech stacks, skills, and tools**. Focus on **hard skills** and **specific tools** (e.g., programming languages, frameworks, development environments).
    - Ensure that all specific tools and technologies mentioned in the experiences are also reflected in the **skills section** to maintain consistency between the two sections.
-   - Number of Groups shoul be less than 8 and skill keywords must not be bolded with asterisks.
+   - Number of Groups shoul be less than 6 and skill keywords must not be bolded with asterisks.
+   - Group names should be as short as possible.
+   - Ensure there are up to 8 and at lease 5 keywords in every skills group.
+   - Don't include soft skills.
+
+4. **Generate Detailed Experiences with Expanded Tech Stacks and Soft Skills**:
+   - For my **current role (IM Digital)**, generate **18-20 bullet sentences** that align with the tech stack (expanded or focused depending on the JD), using detailed examples of responsibilities and some accomplishments.
+   - Bullet sentences should be with around 35 words.
+   - Include **both expanded tech stacks and soft skills** mentioned in the JD (such as collaboration, leadership, communication, adaptability) throughout the experiences to provide a balanced view of technical and interpersonal abilities.
+   - For my **previous roles (Mettics and Southshore Managed IT Group)**, generate **10 bullet sentences** per company, reflecting both the explicitly mentioned technologies and the inferred tech stack as necessary, ensuring the use of specific tools relevant to the role.
+   - Ensure that all experiences reflect **hard skills** required for the role, and that all skills are consistent with the timeline of my career, **avoiding mention of technologies that weren’t available** during the specific roles.
+
 5. **Consistent Bold Formatting for Key Skills**:
    - **Consistently bold all key abilities, technical skills, and tools** throughout the resume by surrounding them with **asterisks** tags eg. **React**. Ensure this bolding is applied uniformly across the **experience**, **skills**, and **summary** sections to highlight key terms for ATS (Applicant Tracking Systems).
+
 6. **ATS Optimization and Formatting**:
    - **Bold key abilities and technical skills** to ensure they stand out for ATS (Applicant Tracking Systems). Surround these with **asterisks** to indicate this formatting.
    - Structure the resume with clear sections: **Summary, Technical Skills, and Experiences**.
