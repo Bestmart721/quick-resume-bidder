@@ -47,7 +47,7 @@ app.whenReady().then(() => {
   notifier.notify({
     icon: LightSuccess,
     title: 'Resume Generator',
-    message: 'Ready to generate resumes.',
+    message: 'Ready to generate resumes.'
   })
 
   logMessage('++++++ Resume writer is ready. ++++++')
@@ -197,6 +197,10 @@ const exportResume = async (resume, fileName) => {
 }
 
 function formatString(template, ...args) {
+  args = args.map((arg) => {
+    arg = arg.replace(/\/|\\|:|\*|\?|"|<|>|\||-/g, '_')
+    return arg
+  })
   return template.replace(/{(\d+)}/g, (match, index) => args[index] || '')
 }
 
