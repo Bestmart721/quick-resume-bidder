@@ -26,6 +26,22 @@ const instructions = fs.readFileSync(path.resolve('instructions.txt'), 'utf8')
 
 const globalKeyboardListener = new GlobalKeyboardListener()
 
+const generatedResumeExtracted = zod.object({
+  companyName: zod.string(),
+  roleTitle: zod.string(),
+  developerTitle: zod.string(),
+  summary: zod.string(),
+  skills: zod.array(
+    zod.object({
+      group: zod.string(),
+      keywords: zod.array(zod.string())
+    })
+  ),
+  experience_first: zod.array(zod.string()),
+  experience_second: zod.array(zod.string()),
+  experience_third: zod.array(zod.string())
+})
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
@@ -73,21 +89,6 @@ const openai = new OpenAI({
 })
 
 const generateResume = async (jobDescription) => {
-  const generatedResumeExtracted = zod.object({
-    companyName: zod.string(),
-    roleTitle: zod.string(),
-    summary: zod.string(),
-    skills: zod.array(
-      zod.object({
-        group: zod.string(),
-        keywords: zod.array(zod.string())
-      })
-    ),
-    experience_first: zod.array(zod.string()),
-    experience_second: zod.array(zod.string()),
-    experience_third: zod.array(zod.string())
-  })
-
   const completion = await openai.beta.chat.completions.parse({
     //model: "gpt-4o-2024-08-06",
     model: 'gpt-4o-mini',
@@ -116,8 +117,10 @@ const generateResume = async (jobDescription) => {
   )
   const filenames = fs.readdirSync(outputDir)
   let sameExists = false
-  filenames.forEach((filename) => {
-    if (filename.startsWith(expectedFileName)) {
+  filenames.forEach((str) => {
+    str = str.replace('.txt', '')
+    str = str.split('-').pop() || str
+    if (str === resumeData.companyName) {
       sameExists = true
     }
   })
@@ -126,7 +129,7 @@ const generateResume = async (jobDescription) => {
     notifier.notify(
       {
         title: 'Resume Generator',
-        message: 'A resume with the same title already exists\nDo you want to proceed?',
+        message: `A resume with the same company already exists: ${resumeData.roleTitle} / ${resumeData.companyName}\nDo you want to proceed?`,
         icon: LightCaution,
         actions: ['Yes', 'No']
       },
@@ -134,6 +137,7 @@ const generateResume = async (jobDescription) => {
         if (response === 'yes') {
           const newFileName = expectedFileName + '(' + Math.floor(Math.random() * 1000) + ')'
           exportResume(resumeData, newFileName)
+          exportJobDescription(jobDescription, newFileName)
         }
       }
     )
@@ -160,7 +164,7 @@ const exportResume = async (resume, fileName) => {
   })
 
   const options = {
-    title: resume.roleTitle,
+    title: resume.developerTitle,
     lastJob: resume.roleTitle,
     summary: resume.summary.replace(/\*/g, ''),
     skills: resume.skills.map((skill) => ({
@@ -187,6 +191,11 @@ const exportResume = async (resume, fileName) => {
   try {
     fs.writeFileSync(outputPath, buf)
     openFile(outputPath)
+    notifier.notify({
+      title: 'Resume Generator',
+      message: 'Resume generated successfully\n' + resume.roleTitle + ' / ' + resume.companyName,
+      icon: LightSuccess
+    })
   } catch (err) {
     logMessage(err)
     notifier.notify({
