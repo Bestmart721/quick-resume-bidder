@@ -21,8 +21,7 @@ import LightCaution from '../../resources/LightCaution.png?asset'
 import LightError from '../../resources/LightError.png?asset'
 import LightSuccess from '../../resources/LightSuccess.png?asset'
 import config from '../../config.json'
-
-const instructions = fs.readFileSync(path.resolve('instructions.txt'), 'utf8')
+import instructions from '../../instructions'
 
 const globalKeyboardListener = new GlobalKeyboardListener()
 
@@ -93,7 +92,8 @@ const generateResume = async (jobDescription) => {
     //model: "gpt-4o-2024-08-06",
     model: 'gpt-4o-mini',
     messages: [
-      { role: 'system', content: instructions },
+      { role: 'system', content: "You are a resume generation expert for tailored job applications." },
+      ...(instructions || []).map((instruction) => ({ role: 'user' as const, content: instruction })),
       { role: 'user', content: jobDescription }
     ],
     response_format: zodResponseFormat(generatedResumeExtracted, 'research_paper_extraction')
@@ -169,7 +169,7 @@ const exportResume = async (resume, fileName) => {
     summary: resume.summary.replace(/\*/g, ''),
     skills: resume.skills.map((skill) => ({
       group: skill.group,
-      keywords: skill.keywords.join(', ').replace(/\*\*/g, '')
+      keywords: skill.keywords.join(', ').replace(/\*/g, '')
     })),
     bullets1: formatBullets(resume.experience_first),
     bullets2: formatBullets(resume.experience_second),
