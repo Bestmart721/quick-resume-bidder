@@ -5,3 +5,4 @@ out
 *.log*
 config.json
 instructions.txt
+.env

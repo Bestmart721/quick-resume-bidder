@@ -14,13 +14,14 @@ import { exec } from 'child_process'
 import { zodResponseFormat } from 'openai/helpers/zod'
 import Docxtemplater from 'docxtemplater'
 import notifier from 'node-notifier'
+import dotenv from 'dotenv'
+dotenv.config()
 
 // import iconImage from '../../resources/icon.png?asset'
 import image from '../../resources/images.png?asset'
 import LightCaution from '../../resources/LightCaution.png?asset'
 import LightError from '../../resources/LightError.png?asset'
 import LightSuccess from '../../resources/LightSuccess.png?asset'
-import config from '../../config.json'
 import instructions from '../../instructions'
 
 const globalKeyboardListener = new GlobalKeyboardListener()
@@ -84,7 +85,7 @@ app.on('window-all-closed', () => {
 
 const openai = new OpenAI({
   dangerouslyAllowBrowser: true,
-  apiKey: config.openApiKey
+  apiKey: process.env.OPENAI_API_KEY
 })
 
 const generateResume = async (jobDescription) => {
@@ -99,7 +100,7 @@ const generateResume = async (jobDescription) => {
     response_format: zodResponseFormat(generatedResumeExtracted, 'research_paper_extraction')
   })
 
-  const outputDir = config.outputDir
+  const outputDir = process.env.OUTPUT_DIR
   if (!outputDir) {
     notifier.notify({
       title: 'Resume Generator',
@@ -111,7 +112,7 @@ const generateResume = async (jobDescription) => {
 
   const resumeData = JSON.parse(completion.choices[0].message.content || '{}')
   const expectedFileName = formatString(
-    config.outputFilename,
+    process.env.OUTPUT_FILENAME || '{0}-{1}',
     resumeData.roleTitle,
     resumeData.companyName
   )
@@ -148,7 +149,7 @@ const generateResume = async (jobDescription) => {
 }
 
 const exportJobDescription = async (jobDescription, fileName) => {
-  const outputDir = config.outputDir
+  const outputDir = process.env.OUTPUT_DIR
   if (!outputDir) {
     throw new Error('OUTPUT_DIR environment variable is not defined')
   }
@@ -182,7 +183,7 @@ const exportResume = async (resume, fileName) => {
     compression: 'DEFLATE'
   })
 
-  const outputDir = config.outputDir
+  const outputDir = process.env.OUTPUT_DIR
   if (!outputDir) {
     throw new Error('OUTPUT_DIR environment variable is not defined')
   }
