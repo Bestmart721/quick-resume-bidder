@@ -29,14 +29,16 @@ export default [
   `**Detailed Experiences Generation 1**:
     - For IM Digital: Generate 12 detailed technical bullet points that align with the JD.
     - Each sentences must be 30 words long.
-    - Include industry-specific trends or technologies. Include both tech stacks and soft skills (e.g., collaboration, adaptability).`,
+    - Include industry-specific trends or technologies. Include both tech stacks and soft skills (e.g., collaboration, adaptability).
+    - Don't include many numeric measurements.`,
     
   `**Detailed Experiences Generation 2**:
-    - For Point B: Generate 9 experience bullet points and focus on key JD skills.`,
+    - For Point B: Generate 9 experience bullet points and focus on key JD skills.
+    - Don't include many numeric measurements.`,
     
   `**Detailed Experiences Generation 3**:
     - For Southshore Managed IT Group: Generate 7 bullet points, reflecting the skills relevant to that timeframe.
-    - Include a numeric measurement only in the last bullet point.`,
+    - Include a numeric measurement only in the last bullet sentence.`,
 
   `**Consistent Formatting**:
     - Bold all key abilities, technical skills, and tools consistently using asterisks, e.g., **React**. This should be applied across experience, skills, and summary sections for ATS optimization.`,
