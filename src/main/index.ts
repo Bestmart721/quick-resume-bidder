@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { app, shell, BrowserWindow, ipcMain, Notification, Tray, Menu, nativeImage } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, Notification, Tray, Menu, nativeImage, screen } from 'electron'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import OpenAI from 'openai'
@@ -14,15 +14,17 @@ import { exec } from 'child_process'
 import { zodResponseFormat } from 'openai/helpers/zod'
 import Docxtemplater from 'docxtemplater'
 import notifier from 'node-notifier'
-import dotenv from 'dotenv'
-dotenv.config()
+// import dotenv from 'dotenv'
+// dotenv.config()
 
 // import iconImage from '../../resources/icon.png?asset'
 import image from '../../resources/images.png?asset'
 import LightCaution from '../../resources/LightCaution.png?asset'
 import LightError from '../../resources/LightError.png?asset'
 import LightSuccess from '../../resources/LightSuccess.png?asset'
-import instructions from '../../instructions'
+
+const config = JSON.parse(fs.readFileSync('config.json', 'utf8'))
+const instructions = fs.readFileSync('instructions.txt', 'utf8').split('--------').filter((line) => line.trim().length > 0)
 
 const globalKeyboardListener = new GlobalKeyboardListener()
 
@@ -42,6 +44,48 @@ const generatedResumeExtracted = zod.object({
   experience_third: zod.array(zod.string())
 })
 
+let mainWindow: BrowserWindow;
+
+function createWindow(): void {
+  // Create the browser window.
+  mainWindow = new BrowserWindow({
+    width: 200,
+    height: 304,
+    minHeight: 304,
+    maxHeight: 304,
+    // resizable: false,
+    show: false,
+    transparent: true,
+    autoHideMenuBar: true,
+    alwaysOnTop: true,
+    frame: false,
+    ...(process.platform === 'linux' ? { image } : {}),
+    webPreferences: {
+      preload: path.join(__dirname, '../preload/index.js'),
+      sandbox: false
+    },
+    x: screen.getPrimaryDisplay().workAreaSize.width - 200,
+    y: 200,
+  })
+
+  mainWindow.on('ready-to-show', () => {
+    mainWindow.show()
+  })
+
+  mainWindow.webContents.setWindowOpenHandler((details) => {
+    shell.openExternal(details.url)
+    return { action: 'deny' }
+  })
+
+  // HMR for renderer base on electron-vite cli.
+  // Load the remote URL for development or the local html file for production.
+  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+    mainWindow.loadURL(`http://127.0.0.1:5173/`)
+  } else {
+    mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'))
+  }
+}
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
@@ -60,18 +104,24 @@ app.whenReady().then(() => {
     app.quit()
   }
 
-  notifier.notify({
-    icon: LightSuccess,
-    title: 'Resume Generator',
-    message: 'Ready to generate resumes.'
-  })
+  // notifier.notify({
+  //   icon: LightCaution,
+  //   title: 'Resume Generator',
+  //   message: 'Ready to generate resumes.'
+  // })
+
+  // createWindow()
+  setupGlobalKeyboardListener()
 
   logMessage('++++++ Resume writer is ready. ++++++')
+
   const tray = new Tray(image)
+
   const contextMenu = Menu.buildFromTemplate([{ label: 'Quit', click: () => app.quit() }])
   tray.setToolTip('Resume Generator')
   tray.setContextMenu(contextMenu)
-  setupGlobalKeyboardListener()
+  createWindow()
+  // showNotification('Ready to generate resumes.')
 })
 
 // Quit when all windows are closed, except on macOS. There, it's common
@@ -85,10 +135,11 @@ app.on('window-all-closed', () => {
 
 const openai = new OpenAI({
   dangerouslyAllowBrowser: true,
-  apiKey: process.env.OPENAI_API_KEY
+  apiKey: config.openApiKey
 })
 
 const generateResume = async (jobDescription) => {
+  const startTime = new Date().getTime()
   const completion = await openai.beta.chat.completions.parse({
     //model: "gpt-4o-2024-08-06",
     model: 'gpt-4o-mini',
@@ -99,8 +150,13 @@ const generateResume = async (jobDescription) => {
     ],
     response_format: zodResponseFormat(generatedResumeExtracted, 'research_paper_extraction')
   })
+  const endTime = new Date().getTime()
+  mainWindow.webContents.send('message', {
+    text: `Resume generated in ${endTime - startTime}ms`,
+    type: 'success'
+  })
 
-  const outputDir = process.env.OUTPUT_DIR
+  const outputDir = config.outputDir
   if (!outputDir) {
     notifier.notify({
       title: 'Resume Generator',
@@ -112,7 +168,7 @@ const generateResume = async (jobDescription) => {
 
   const resumeData = JSON.parse(completion.choices[0].message.content || '{}')
   const expectedFileName = formatString(
-    process.env.OUTPUT_FILENAME || '{0}-{1}',
+    config.outputFilename || '{0}-{1}',
     resumeData.roleTitle,
     resumeData.companyName
   )
@@ -127,21 +183,25 @@ const generateResume = async (jobDescription) => {
   })
 
   if (sameExists) {
-    notifier.notify(
-      {
-        title: 'Resume Generator',
-        message: `A resume with the same company already exists: ${resumeData.roleTitle} / ${resumeData.companyName}\nDo you want to proceed?`,
-        icon: LightCaution,
-        actions: ['Yes', 'No']
-      },
-      (err, response) => {
-        if (response === 'yes') {
-          const newFileName = expectedFileName + '(' + Math.floor(Math.random() * 1000) + ')'
-          exportResume(resumeData, newFileName)
-          exportJobDescription(jobDescription, newFileName)
-        }
-      }
-    )
+    mainWindow.webContents.send('message', {
+      text: 'Conflict : ' + resumeData.companyName + ' / ' + resumeData.roleTitle,
+      type: 'same-company-warning'
+    })
+    // notifier.notify(
+    //   {
+    //     title: 'Resume Generator',
+    //     message: `A resume with the same company already exists: ${resumeData.roleTitle} / ${resumeData.companyName}\nDo you want to proceed?`,
+    //     icon: LightCaution,
+    //     actions: ['Yes', 'No']
+    //   },
+    //   (err, response) => {
+    //     if (response === 'yes') {
+    //       const newFileName = expectedFileName + '(' + Math.floor(Math.random() * 1000) + ')'
+    //       exportResume(resumeData, newFileName)
+    //       exportJobDescription(jobDescription, newFileName)
+    //     }
+    //   }
+    // )
   } else {
     exportResume(resumeData, expectedFileName)
     exportJobDescription(jobDescription, expectedFileName)
@@ -149,7 +209,7 @@ const generateResume = async (jobDescription) => {
 }
 
 const exportJobDescription = async (jobDescription, fileName) => {
-  const outputDir = process.env.OUTPUT_DIR
+  const outputDir = config.outputDir
   if (!outputDir) {
     throw new Error('OUTPUT_DIR environment variable is not defined')
   }
@@ -157,51 +217,68 @@ const exportJobDescription = async (jobDescription, fileName) => {
 }
 
 const exportResume = async (resume, fileName) => {
-  const content = fs.readFileSync(path.resolve('template.docx'), 'binary')
-  const zip = new PizZip(content)
-  const doc = new Docxtemplater(zip, {
-    paragraphLoop: true,
-    linebreaks: true
-  })
-
-  const options = {
-    title: resume.developerTitle,
-    lastJob: resume.roleTitle,
-    summary: resume.summary.replace(/\*/g, ''),
-    skills: resume.skills.map((skill) => ({
-      group: skill.group,
-      keywords: skill.keywords.join(', ').replace(/\*/g, '')
-    })),
-    bullets1: formatBullets(resume.experience_first),
-    bullets2: formatBullets(resume.experience_second),
-    bullets3: formatBullets(resume.experience_third)
-  }
-
-  doc.render(options)
-  const buf = doc.getZip().generate({
-    type: 'nodebuffer',
-    compression: 'DEFLATE'
-  })
-
-  const outputDir = process.env.OUTPUT_DIR
-  if (!outputDir) {
-    throw new Error('OUTPUT_DIR environment variable is not defined')
-  }
-  const outputPath = path.resolve(outputDir, fileName + '.docx')
-
   try {
-    fs.writeFileSync(outputPath, buf)
-    openFile(outputPath)
-    notifier.notify({
-      title: 'Resume Generator',
-      message: 'Resume generated successfully\n' + resume.roleTitle + ' / ' + resume.companyName,
-      icon: LightSuccess
+    const content = fs.readFileSync('template.docx', 'binary')
+    const zip = new PizZip(content)
+    const doc = new Docxtemplater(zip, {
+      paragraphLoop: true,
+      linebreaks: true
     })
+
+    const options = {
+      title: resume.developerTitle,
+      lastJob: resume.roleTitle,
+      summary: resume.summary.replace(/\*/g, ''),
+      skills: resume.skills.map((skill) => ({
+        group: skill.group,
+        keywords: skill.keywords.join(', ').replace(/\*/g, '')
+      })),
+      bullets1: formatBullets(resume.experience_first),
+      bullets2: formatBullets(resume.experience_second),
+      bullets3: formatBullets(resume.experience_third)
+    }
+
+    doc.render(options)
+    const buf = doc.getZip().generate({
+      type: 'nodebuffer',
+      compression: 'DEFLATE'
+    })
+
+    const outputDir = config.outputDir
+    if (!outputDir) {
+      throw new Error('OUTPUT_DIR environment variable is not defined')
+    }
+    const outputPath = path.resolve(outputDir, fileName + '.docx')
+
+
+    try {
+      fs.writeFileSync(outputPath, buf)
+      openFile(outputPath)
+      // notifier.notify({
+      //   title: 'Resume Generator',
+      //   message: 'Resume generated successfully\n' + resume.roleTitle + ' / ' + resume.companyName,
+      //   icon: LightSuccess
+      // })
+      mainWindow.webContents.send('message', {
+        text: resume.roleTitle + ' / ' + resume.companyName,
+        type: 'success'
+      })
+    } catch (err) {
+      logMessage(err)
+      // notifier.notify({
+      //   title: 'Resume Generator',
+      //   message: err instanceof Error ? err.message : 'Unknown error'
+      // })
+      mainWindow.webContents.send('message', {
+        text: err instanceof Error ? err.message : 'Unknown error',
+        type: 'error'
+      })
+    }
   } catch (err) {
     logMessage(err)
-    notifier.notify({
-      title: 'Resume Generator',
-      message: err instanceof Error ? err.message : 'Unknown error'
+    mainWindow.webContents.send('message', {
+      text: err instanceof Error ? err.message : 'Unknown error',
+      type: 'error'
     })
   }
 }
@@ -226,6 +303,7 @@ const formatBullets = (bulletsArray) => {
 }
 
 const setupGlobalKeyboardListener = () => {
+
   globalKeyboardListener.addListener(function (e, down) {
     if (e.state == 'DOWN' && e.name == 'SPACE' && down['LEFT CTRL']) {
       getText()
@@ -233,17 +311,25 @@ const setupGlobalKeyboardListener = () => {
           if (!jobDescription) {
             throw new Error('No text selected')
           }
-          notifier.notify({
-            title: 'Generating resume...',
-            message: jobDescription
+          // notifier.notify({
+          //   title: 'Generating resume...',
+          //   message: jobDescription
+          // })
+          mainWindow.webContents.send('message', {
+            text: jobDescription,
+            type: 'selected-text'
           })
           generateResume(jobDescription)
         })
         .catch((err) => {
-          notifier.notify({
-            icon: LightError,
-            title: 'Resume Generator',
-            message: err.message
+          // notifier.notify({
+          //   icon: LightError,
+          //   title: 'Resume Generator',
+          //   message: err.message
+          // })
+          mainWindow.webContents.send('message', {
+            text: err.message,
+            type: 'selected-text-error'
           })
           logMessage(err)
         })
@@ -265,9 +351,8 @@ const openFile = (filePath) => {
 }
 
 const logMessage = (message) => {
-  const logFilePath = path.join(__dirname, 'app.log')
+  const logFilePath = path.join('app.log')
   const logEntry = `${new Date().toISOString()} - ${message}\n`
-  console.log(message)
   fs.appendFileSync(logFilePath, logEntry)
 }
 

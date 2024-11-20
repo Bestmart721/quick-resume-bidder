@@ -1,4 +1,4 @@
-# quick-resume
+# quick-resume-host
 
 An Electron application with React and TypeScript
 

@@ -1,0 +1,19 @@
+{
+  "extends": [
+    "development"
+  ],
+  "hints": {
+    "compat-api/css": [
+      "default",
+      {
+        "ignore": [
+          "-webkit-app-region",
+          "user-select",
+          "backdrop-filter"
+        ]
+      }
+    ],
+    "disown-opener": "off",
+    "meta-viewport": "off"
+  }
+}

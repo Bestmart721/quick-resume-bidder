@@ -1,33 +1,68 @@
 import Versions from './components/Versions'
-import electronLogo from './assets/electron.svg'
+import { useEffect, useRef, useState } from 'react'
+import { GripVerticalIcon } from 'lucide-react'
+let i = 0;
+
+export interface LogType {
+  id?: number
+  text: string,
+  type?: string,
+}
 
 function App(): JSX.Element {
   const ipcHandle = (): void => window.electron.ipcRenderer.send('ping')
+  const [logArray, setLogArray] = useState<LogType[]>([{
+    text: 'Welcome to Quick Resume!',
+    type: 'info',
+    id: i
+  }])
+  const logAreaRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    window.electron.ipcRenderer.on('message', (event, arg) => {
+      setLogArray((prev) => {
+        const newArray = [...prev, {
+          text: arg.text,
+          type: arg.type,
+          id: i
+        }]
+        // return newArray.slice(-20)
+        return newArray
+      })
+    })
+
+    return () => {
+      window.electron.ipcRenderer.removeAllListeners('message')
+    }
+  }, [])
+
+  useEffect(() => {
+    if (logAreaRef.current) {
+      logAreaRef.current.scrollTop = logAreaRef.current.scrollHeight
+    }
+  }, [logArray])
 
   return (
     <>
-      <img alt="logo" className="logo" src={electronLogo} />
-      <div className="creator">Powered by electron-vite</div>
-      <div className="text">
-        Build an Electron app with <span className="react">React</span>
-        &nbsp;and <span className="ts">TypeScript</span>
+      <div className="bg"></div>
+      <GripVerticalIcon className='move-icon' />
+      <div className='log-area' ref={logAreaRef}>
+        {
+          logArray.map((log, index) => (
+            <div key={index}
+              style={{
+                color: (() => {
+                  if (log.type?.includes('error')) return 'pink'
+                  if (log.type?.includes('warning')) return 'yellow'
+                  if (log.type?.includes('info')) return 'cyan'
+                  if (log.type?.includes('success')) return 'lightgreen'
+                  return 'white'
+                })()
+              }}
+            >{log.text}</div>
+          ))
+        }
       </div>
-      <p className="tip">
-        Please try pressing <code>F12</code> to open the devTool
-      </p>
-      <div className="actions">
-        <div className="action">
-          <a href="https://electron-vite.org/" target="_blank" rel="noreferrer">
-            Documentation
-          </a>
-        </div>
-        <div className="action">
-          <a target="_blank" rel="noreferrer" onClick={ipcHandle}>
-            Send IPC
-          </a>
-        </div>
-      </div>
-      <Versions></Versions>
     </>
   )
 }
