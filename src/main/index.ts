@@ -14,6 +14,7 @@ import { exec } from 'child_process'
 import { zodResponseFormat } from 'openai/helpers/zod'
 import Docxtemplater from 'docxtemplater'
 import notifier from 'node-notifier'
+import { v4 as uuidv4 } from 'uuid'
 // import dotenv from 'dotenv'
 // dotenv.config()
 
@@ -27,6 +28,14 @@ const config = JSON.parse(fs.readFileSync('config.json', 'utf8'))
 const instructions = fs.readFileSync('instructions.txt', 'utf8').split('--------').filter((line) => line.trim().length > 0)
 
 const globalKeyboardListener = new GlobalKeyboardListener()
+
+interface ApplicationDataType {
+  id?: string;
+  jobDescription: string;
+  resume: any;
+}
+
+let applications: ApplicationDataType[] = []
 
 const generatedResumeExtracted = zod.object({
   companyName: zod.string(),
@@ -50,9 +59,9 @@ function createWindow(): void {
   // Create the browser window.
   mainWindow = new BrowserWindow({
     width: 200,
-    height: 304,
-    minHeight: 304,
-    maxHeight: 304,
+    height: 300,
+    minHeight: 300,
+    maxHeight: 300,
     // resizable: false,
     show: false,
     transparent: true,
@@ -138,7 +147,8 @@ const openai = new OpenAI({
   apiKey: config.openApiKey
 })
 
-const generateResume = async (jobDescription) => {
+const generateResume = async (application) => {
+  const { id, jobDescription } = application
   const startTime = new Date().getTime()
   const completion = await openai.beta.chat.completions.parse({
     //model: "gpt-4o-2024-08-06",
@@ -152,7 +162,8 @@ const generateResume = async (jobDescription) => {
   })
   const endTime = new Date().getTime()
   mainWindow.webContents.send('message', {
-    text: `Resume generated in ${endTime - startTime}ms`,
+    id: id + '-generated',
+    text: `Generated : ${(endTime - startTime).toLocaleString()}ms`,
     type: 'success'
   })
 
@@ -182,31 +193,38 @@ const generateResume = async (jobDescription) => {
     }
   })
 
+  applications.forEach((app) => {
+    if (app.id === id) {
+      app.resume = resumeData
+    }
+  });
+
   if (sameExists) {
     mainWindow.webContents.send('message', {
+      id: id + '-same-company',
       text: 'Conflict : ' + resumeData.companyName + ' / ' + resumeData.roleTitle,
       type: 'same-company-warning'
     })
-    // notifier.notify(
-    //   {
-    //     title: 'Resume Generator',
-    //     message: `A resume with the same company already exists: ${resumeData.roleTitle} / ${resumeData.companyName}\nDo you want to proceed?`,
-    //     icon: LightCaution,
-    //     actions: ['Yes', 'No']
-    //   },
-    //   (err, response) => {
-    //     if (response === 'yes') {
-    //       const newFileName = expectedFileName + '(' + Math.floor(Math.random() * 1000) + ')'
-    //       exportResume(resumeData, newFileName)
-    //       exportJobDescription(jobDescription, newFileName)
-    //     }
-    //   }
-    // )
   } else {
-    exportResume(resumeData, expectedFileName)
+    exportResume(id, resumeData, expectedFileName)
     exportJobDescription(jobDescription, expectedFileName)
   }
 }
+
+ipcMain.on('proceed', (event, id, proceed) => {
+  id = id.replace(/-same-company/g, '')
+  const application = applications.find((app) => app.id === id)
+  if (application && proceed) {
+    const expectedFileName = formatString(
+      config.outputFilename || '{0}-{1}',
+      application.resume.roleTitle,
+      application.resume.companyName
+    )
+    const newFileName = expectedFileName + '(' + Math.floor(Math.random() * 1000) + ')'
+    exportResume(application.id, application.resume, newFileName)
+    exportJobDescription(application.jobDescription, newFileName)
+  }
+});
 
 const exportJobDescription = async (jobDescription, fileName) => {
   const outputDir = config.outputDir
@@ -216,7 +234,7 @@ const exportJobDescription = async (jobDescription, fileName) => {
   fs.writeFileSync(path.resolve(outputDir, fileName + '.txt'), jobDescription)
 }
 
-const exportResume = async (resume, fileName) => {
+const exportResume = async (id, resume, fileName) => {
   try {
     const content = fs.readFileSync('template.docx', 'binary')
     const zip = new PizZip(content)
@@ -260,7 +278,8 @@ const exportResume = async (resume, fileName) => {
       //   icon: LightSuccess
       // })
       mainWindow.webContents.send('message', {
-        text: resume.roleTitle + ' / ' + resume.companyName,
+        id: id + '-exported',
+        text: 'Exported : ' + resume.roleTitle + ' / ' + resume.companyName,
         type: 'success'
       })
     } catch (err) {
@@ -270,6 +289,7 @@ const exportResume = async (resume, fileName) => {
       //   message: err instanceof Error ? err.message : 'Unknown error'
       // })
       mainWindow.webContents.send('message', {
+        id: id + '-exported',
         text: err instanceof Error ? err.message : 'Unknown error',
         type: 'error'
       })
@@ -277,6 +297,7 @@ const exportResume = async (resume, fileName) => {
   } catch (err) {
     logMessage(err)
     mainWindow.webContents.send('message', {
+      id: id + '-exported',
       text: err instanceof Error ? err.message : 'Unknown error',
       type: 'error'
     })
@@ -303,7 +324,6 @@ const formatBullets = (bulletsArray) => {
 }
 
 const setupGlobalKeyboardListener = () => {
-
   globalKeyboardListener.addListener(function (e, down) {
     if (e.state == 'DOWN' && e.name == 'SPACE' && down['LEFT CTRL']) {
       getText()
@@ -315,11 +335,19 @@ const setupGlobalKeyboardListener = () => {
           //   title: 'Generating resume...',
           //   message: jobDescription
           // })
+          const application: ApplicationDataType = {
+            id: uuidv4(),
+            jobDescription,
+            resume: null
+          }
+          applications.push(application)
+          console.log('applications', applications)
           mainWindow.webContents.send('message', {
-            text: jobDescription,
+            id: application.id + '-selected',
+            text: 'Selected : ' + jobDescription,
             type: 'selected-text'
           })
-          generateResume(jobDescription)
+          generateResume(application)
         })
         .catch((err) => {
           // notifier.notify({
@@ -328,6 +356,7 @@ const setupGlobalKeyboardListener = () => {
           //   message: err.message
           // })
           mainWindow.webContents.send('message', {
+            id: uuidv4(),
             text: err.message,
             type: 'selected-text-error'
           })
