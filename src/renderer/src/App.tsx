@@ -70,7 +70,7 @@ function App(): JSX.Element {
         <span className='counts'>
           {exportedCount}
           /
-          {generatedCount}
+          {generatedCount} (Bidder)
         </span>
         <GripHorizontalIcon className='move-icon' />
         <XIcon className='close-icon' onClick={toggleCloseModal} />
